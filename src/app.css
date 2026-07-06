@@ -90,7 +90,8 @@ label {
 }
 
 input[type="datetime-local"],
-input[type="number"] {
+input[type="number"],
+select {
   width: 100%;
   padding: 1rem;
   border-radius: 12px;
@@ -101,10 +102,12 @@ input[type="number"] {
   font-size: 1.05rem;
   outline: none;
   transition: all 0.3s ease;
+  appearance: none;
 }
 
 input[type="datetime-local"]:focus,
-input[type="number"]:focus {
+input[type="number"]:focus,
+select:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
@@ -112,6 +115,14 @@ input[type="number"]:focus {
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
     cursor: pointer;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f8fafc'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.25em;
+  padding-right: 3rem;
 }
 
 .calc-button {

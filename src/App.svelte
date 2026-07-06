@@ -1,4 +1,10 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
+  let symbols = $state<string[]>(['BTCUSDT', 'ETHUSDT']);
+  let selectedSymbol = $state('BTCUSDT');
+  let baseAsset = $derived(selectedSymbol.replace('USDT', ''));
+
   let startDate = $state('');
   let endDate = $state('');
   let positionType = $state<'LONG' | 'SHORT'>('LONG');
@@ -6,12 +12,27 @@
   let loading = $state(false);
   let results = $state<null | {
     initialPrice: number;
-    btcSize: number;
+    assetSize: number;
     count: number;
     totalLinear: number;
     totalInverse: number;
   }>(null);
   let error = $state('');
+
+  onMount(async () => {
+    try {
+      const res = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
+      const data = await res.json();
+      if (data && data.symbols) {
+        symbols = data.symbols
+          .filter((s: any) => s.status === 'TRADING' && s.quoteAsset === 'USDT' && s.contractType === 'PERPETUAL')
+          .map((s: any) => s.symbol)
+          .sort();
+      }
+    } catch (e) {
+      console.error("Failed to load symbols", e);
+    }
+  });
 
   async function calculate() {
     if (!startDate || !endDate) {
@@ -36,12 +57,12 @@
       let currentStart = startMs;
       let totalLinear = 0;
       let totalInverse = 0;
-      let btcSize = 0;
+      let assetSize = 0;
       let initialPrice = 0;
       let count = 0;
 
       while (currentStart < endMs) {
-        const url = `https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=${currentStart}&endTime=${endMs}&limit=1000`;
+        const url = `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${selectedSymbol}&startTime=${currentStart}&endTime=${endMs}&limit=1000`;
         const res = await fetch(url);
         if (!res.ok) {
            throw new Error(`API error: ${res.statusText}`);
@@ -61,10 +82,10 @@
           
           if (count === 0) {
             initialPrice = markPrice;
-            btcSize = capital / initialPrice;
+            assetSize = capital / initialPrice;
           }
           
-          const positionNotionalLinear = btcSize * markPrice;
+          const positionNotionalLinear = assetSize * markPrice;
           let earningsLinear = 0;
           let earningsInverse = 0;
           
@@ -96,7 +117,7 @@
       } else {
          results = {
             initialPrice,
-            btcSize,
+            assetSize,
             count,
             totalLinear,
             totalInverse
@@ -112,8 +133,8 @@
 
 <main class="app-container">
   <div class="glass-panel">
-    <h1>BTC Funding Calculator</h1>
-    <p class="subtitle">Calculate historical funding rate returns for Binance BTCUSDT</p>
+    <h1>{baseAsset} Funding Calculator</h1>
+    <p class="subtitle">Calculate historical funding rate returns for Binance {selectedSymbol}</p>
     
     <div class="position-toggle">
       <button 
@@ -130,10 +151,21 @@
     
     <div class="input-group">
       <div class="input-field">
+        <label for="symbol">Symbol</label>
+        <select id="symbol" bind:value={selectedSymbol}>
+          {#each symbols as sym}
+            <option value={sym}>{sym}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="input-field">
         <label for="capital">Position Size (USD)</label>
         <input type="number" id="capital" min="1" step="any" bind:value={capital} />
       </div>
+    </div>
 
+    <div class="input-group">
       <div class="input-field">
         <label for="startDate">Start Date & Time</label>
         <input type="datetime-local" id="startDate" bind:value={startDate} />
@@ -162,14 +194,14 @@
     
     {#if results}
       <div class="results-container">
-        <div class="summary-cards">
+         <div class="summary-cards">
            <div class="card">
-             <span class="label">Initial BTC Price</span>
-             <span class="value">${results.initialPrice.toFixed(2)}</span>
+             <span class="label">Initial {baseAsset} Price</span>
+             <span class="value">${results.initialPrice.toFixed(4)}</span>
            </div>
            <div class="card">
-             <span class="label">BTC Position Size</span>
-             <span class="value">{results.btcSize.toFixed(6)} BTC</span>
+             <span class="label">{baseAsset} Position Size</span>
+             <span class="value">{results.assetSize.toFixed(6)} {baseAsset}</span>
            </div>
            <div class="card">
              <span class="label">Funding Events</span>
@@ -180,7 +212,7 @@
         <div class="assumptions">
           <div class="assumption-block linear">
             <h3>USDT-Margined (Linear)</h3>
-            <p>You {positionType} exactly {results.btcSize.toFixed(6)} BTC and hold.</p>
+            <p>You {positionType} exactly {results.assetSize.toFixed(6)} {baseAsset} and hold.</p>
             <div class="earnings {results.totalLinear >= 0 ? 'positive' : 'negative'}">
               {results.totalLinear >= 0 ? '+' : ''}{results.totalLinear.toFixed(4)} USDT
             </div>
