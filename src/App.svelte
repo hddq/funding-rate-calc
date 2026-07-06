@@ -2,6 +2,7 @@
   let startDate = $state('');
   let endDate = $state('');
   let positionType = $state<'LONG' | 'SHORT'>('LONG');
+  let capital = $state(1000);
   let loading = $state(false);
   let results = $state<null | {
     initialPrice: number;
@@ -60,7 +61,7 @@
           
           if (count === 0) {
             initialPrice = markPrice;
-            btcSize = 1000.0 / initialPrice;
+            btcSize = capital / initialPrice;
           }
           
           const positionNotionalLinear = btcSize * markPrice;
@@ -69,10 +70,10 @@
           
           if (positionType === 'LONG') {
             earningsLinear = -1 * positionNotionalLinear * fundingRate;
-            earningsInverse = -1 * 1000.0 * fundingRate;
+            earningsInverse = -1 * capital * fundingRate;
           } else {
             earningsLinear = 1 * positionNotionalLinear * fundingRate;
-            earningsInverse = 1 * 1000.0 * fundingRate;
+            earningsInverse = 1 * capital * fundingRate;
           }
           
           totalLinear += earningsLinear;
@@ -129,6 +130,11 @@
     
     <div class="input-group">
       <div class="input-field">
+        <label for="capital">Position Size (USD)</label>
+        <input type="number" id="capital" min="1" step="any" bind:value={capital} />
+      </div>
+
+      <div class="input-field">
         <label for="startDate">Start Date & Time</label>
         <input type="datetime-local" id="startDate" bind:value={startDate} />
       </div>
@@ -182,7 +188,7 @@
           
           <div class="assumption-block inverse">
             <h3>Coin-Margined (Inverse)</h3>
-            <p>Position notional stays at exactly $1000.</p>
+            <p>Position notional stays at exactly ${capital}.</p>
             <div class="earnings {results.totalInverse >= 0 ? 'positive' : 'negative'}">
               {results.totalInverse >= 0 ? '+' : ''}{results.totalInverse.toFixed(4)} USD
             </div>

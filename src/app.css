@@ -77,6 +77,7 @@ h1 {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
@@ -88,7 +89,8 @@ label {
   letter-spacing: 0.05em;
 }
 
-input[type="datetime-local"] {
+input[type="datetime-local"],
+input[type="number"] {
   width: 100%;
   padding: 1rem;
   border-radius: 12px;
@@ -101,7 +103,8 @@ input[type="datetime-local"] {
   transition: all 0.3s ease;
 }
 
-input[type="datetime-local"]:focus {
+input[type="datetime-local"]:focus,
+input[type="number"]:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
